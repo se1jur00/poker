@@ -98,6 +98,24 @@ class Game:
     def lay_card(self):
         self.table.append(self.deck.get_card())
 
+    def get_statistics(self, cards):
+        suit_dict = {}
+        for card in cards:
+            if card.suit in suit_dict:
+                suit_dict[card.suit] += 1
+            else:
+                suit_dict[card.suit] = 1
+        return suit_dict
+
+
+class Combinations:
+    combs = ['royal flush', 'straight flush', 'four of kind', 'full house', 'flush', 'straight', 'set', 'two pairs',
+             'pairs', 'kicker']
+
+    @staticmethod
+    def get_combinations():
+        return []
+
 
 player1 = Player(balance=1000, name='Player1')
 player2 = Player(balance=1000, name='Player2')
