@@ -1,173 +1,7 @@
-import itertools
-import random
-
-
-class Card:
-    suits = ['Clubs', "Diamonds", 'Hearts', 'Spades']
-    values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-    suits_values = list(itertools.product(values, suits))
-
-    # self.cards = [Card(suit, value) for suit in suits for value in values]
-    def __init__(self, suit, value):
-        self.suit = suit
-        self.value = value
-        self.worth = self.suits_values.index((self.value, self.suit)) + 1
-
-    def __str__(self):
-        return f'{self.suit}:{self.value}'
-
-    def __repr__(self):
-        return f'{self.suit}:{self.value}'
-
-    def __gt__(self, other):
-        return self.worth > other.worth
-
-    def __eq__(self, other):
-        return self.worth == other.wortrh
-
-
-class CardDeck:
-    def __init__(self):
-        self.cards = []
-        self.current_index = 0
-        for suit, value in itertools.product(Card.suits, Card.values):
-            self.cards.append(Card(suit, value))
-
-    def get_card(self):
-        card = self.cards[self.current_index]
-        self.current_index += 1
-        return card
-
-    def shuffle(self):
-        random.shuffle(self.cards)
-
-
-class Player:
-    def __init__(self, name, balance):
-        self.cards = []
-        self.balance = balance
-        self.name = name
-        self.bet = 0
-        self.kicker : Card
-
-    def __repr__(self):
-        return f'{self.name}:{self.cards}'
-
-    def place_bet(self, bet, ):
-        if bet > self.balance:
-            return 'you are enable to bet this much'
-        self.bet += bet
-        self.balance -= bet
-
-    def best_comb(self, table):
-        allCards = self.cards + table
-
-    def add_card(self, card):
-        self.cards.append(card)
-    def fold(self):
-        self.cards = []
-
-
-
-
-
-
-class Game:
-    def __init__(self, blind=25):
-        self.bank = 0
-        self.deck = CardDeck()
-        self.deck.shuffle()
-        self.table = []
-        self.players = []
-
-    def give_players_cards(self):
-        for i in range(2):
-            for player in self.players:
-                player.add_card(self.deck.get_card())
-        for player in self.players:
-            player.kicker = max(player.cards, key = lambda x: x.worth)
-
-    def lay_cards_on_table(self):
-        for i in range(3):
-            self.table.append(self.deck.get_card())
-
-    def start_round(self):
-        self.give_players_cards()
-        self.lay_cards_on_table()
-
-    def check(self):
-        bets = []
-        for i in self.players:
-            bets.append(i.bet)
-        return max(bets)
-
-    def join(self, player):
-        if len(self.players) < 6:
-            self.players.append(player)
-        else:
-            return ('Игра заполнена')
-
-    def lay_card(self):
-        self.table.append(self.deck.get_card())
-
-    def get_statistics(self, cards):
-        suit_dict = {}
-        for card in cards:
-            if card.suit in suit_dict:
-                suit_dict[card.suit] += 1
-            else:
-                suit_dict[card.suit] = 1
-        return suit_dict
-    def kick_player(self, player_index):
-        self.players.pop(player_index)
-
-    def check_winner(self):
-        win_combination  = ""
-        winners = []
-        for combination in Combinations.get_combinations():
-            for player in self.players:
-                suit_dict = self.get_statistics(cards = player.cards + self.table)
-                match combination.__name__:
-                    case 'flush':
-                         if combination(suit_dict):
-                            win_combination = 'flush'
-                            print('flush')
-                            print(player.cards + self.table)
-                            winners.append (player)
-            if len(winners) > 0:
-                break
-        if len(winners) == 1:
-            return winners[0]
-        elif len(winners) == 0:
-            return
-        else:
-            kicker_dict = {winner : winner.kicker for winner in winners}
-            winner = max(kicker_dict, key = kicker_dict.get)
-            return winner
-
-
-
-
-
-class Combinations:
-    combs = ['royal flush', 'straight flush', 'four of kind', 'full house', 'flush', 'straight', 'set', 'two pairs',
-             'pairs', 'kicker']
-
-    @staticmethod
-    def get_combinations():
-        return [Combinations.flush]
-    @staticmethod
-    def flush(suit_dict):
-        for suit in suit_dict:
-            if suit_dict[suit] >= 5:
-                return True
-        return False
-
-
-
-
-
-
+from Player import Player
+from Game import Game
+from Combinations import Combinations
+from Card import Card
 
 player1 = Player(balance=1000, name='Player1')
 player2 = Player(balance=1000, name='Player2')
@@ -182,11 +16,14 @@ game.join(player4)
 game.join(player5)
 game.start_round()
 
-for player in game.players:
-    print(player.cards)
+
 for i in range(2):
     game.lay_card()
+
+# game.table = [Card('Hearts', '10'), Card('Spades', '10'), Card('Diamonds', 'Queen'), Card('Hearts', '9'), Card('Spades', '7')]
+# player1.cards = [Card('Diamonds', '7'), Card('Spades', 'Jack')]
 print(game.table)
-card = Card('Clubs', '3')
-print(card.worth)
 print(game.check_winner())
+for player in game.players:
+    print(player.cards)
+print(Combinations.sort_cards(player1.cards+game.table))
