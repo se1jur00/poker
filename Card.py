@@ -4,7 +4,7 @@ import random
 
 class Card:
     suits = ['Clubs', "Diamonds", 'Hearts', 'Spades']
-    values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+    values =  ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     suits_values = list(itertools.product(values, suits))
 
     # self.cards = [Card(suit, value) for suit in suits for value in values]

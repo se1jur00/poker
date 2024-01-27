@@ -1,10 +1,13 @@
+from Card import Card
 class Player:
-    def __init__(self, name, balance):
+    def __init__(self, id,  name, balance):
+        self.id = id
         self.cards = []
         self.balance = balance
         self.name = name
         self.bet = 0
         self.kicker : Card
+
 
     def __repr__(self):
         return f'{self.name}:{self.cards}'
