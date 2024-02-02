@@ -14,7 +14,7 @@ class Player:
 
     def place_bet(self, bet, ):
         if bet > self.balance:
-            return 'you are enable to bet this much'
+            return 'Недостаточно средств для ставки'
         self.bet += bet
         self.balance -= bet
 

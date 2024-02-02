@@ -30,7 +30,7 @@ def start_game(message):
         for player in games[message.chat.id].players:
             bot.send_message(player.id,','.join([str(card) for card in player.cards]))
         bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
-
+        bot.send_message(message.chat.id, f'Малый блайнд - {games[message.chat.id].SB.name}, \nБольшой блайнд - {games[message.chat.id].BB.name}')
 def create_player(message):
     global all_players
     user_id = message.from_user.id
@@ -50,6 +50,17 @@ def create_game(message):
     else:
         bot.send_message(message.chat.id, 'Игра уже создана')
 
+@bot.message_handler(commands=['bet'])
+def bet(message):
+    bet = int(telebot.util.extract_arguments(message.text))
+    print(bet)
+    print(games[message.chat.id].BB.bet)
+    if bet >= games[message.chat.id].BB.bet:
+        player = [player for player in games[message.chat.id].players if player.id == message.from_user.id][0]
+        player.place_bet(bet)
+        games[message.chat.id].bank += bet
+        print(games[message.chat.id].bank)
+
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
     if message.text == 'start':
@@ -63,6 +74,7 @@ def get_text_messages(message):
         else:
             player = Player(message.from_user.id, all_players[message.from_user.id][0], all_players[message.from_user.id][1])
             games[message.chat.id].join(player)
+
 
 
 

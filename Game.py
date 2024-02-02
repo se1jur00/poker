@@ -1,5 +1,6 @@
 from Card import CardDeck
 from Combinations import Combinations
+import random
 class Game:
     def __init__(self, blind=25):
         self.bank = 0
@@ -7,6 +8,8 @@ class Game:
         self.deck.shuffle()
         self.table = []
         self.players = []
+        self.SB = ''
+        self.BB = ''
 
     def give_players_cards(self):
         for i in range(2):
@@ -22,6 +25,12 @@ class Game:
     def start_round(self):
         self.give_players_cards()
         self.lay_cards_on_table()
+        self.SB = random.choice(self.players)
+        self.SB.place_bet(25)
+        self.bank += 25
+        self.BB = random.choice([player for player in self.players if player != self.SB])
+        self.BB.place_bet(50)
+        self.bank += 50
 
     def check(self):
         bets = []
