@@ -6,7 +6,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 
 
-all_players = {1157904844:['24efg', 1000], 895228111: ['tankipo', 1000]}
+all_players = {1157904844:['24efg', 1000], 895228111: ['tankipo', 1000], 455461393: ['tankipo15', 1000]}
 
 games  = {}
 
@@ -26,11 +26,12 @@ def start_game(message):
     if len(games[message.chat.id].players) >= 2:
         bot.send_message(message.chat.id, 'Игра начинается, идёт раздача карт в личные сообщения.')
         games[message.chat.id].start_round()
-        print(games[message.chat.id].players[0].cards)
-        for player in games[message.chat.id].players:
+        for player in games[message.chat.id].players.values():
             bot.send_message(player.id,','.join([str(card) for card in player.cards]))
-        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
         bot.send_message(message.chat.id, f'Малый блайнд - {games[message.chat.id].SB.name}, \nБольшой блайнд - {games[message.chat.id].BB.name}')
+        if len(games[message.chat.id].players) > 2:
+            bot.send_message(message.chat.id, f'{all_players[games[message.chat.id].next_player][0]}, ожидается ваша ставка')
+
 def create_player(message):
     global all_players
     user_id = message.from_user.id
@@ -56,10 +57,18 @@ def bet(message):
     print(bet)
     print(games[message.chat.id].BB.bet)
     if bet >= games[message.chat.id].BB.bet:
-        player = [player for player in games[message.chat.id].players if player.id == message.from_user.id][0]
-        player.place_bet(bet)
-        games[message.chat.id].bank += bet
+        player = games[message.chat.id].players[message.from_user.id]
+        games[message.chat.id].place_bet(player, bet)
+        games[message.chat.id].get_next_player_id()
+        bet_players =  [player for player in games[message.chat.id].players.values() if player.bet > 0]
+        if len(bet_players) == len(games[message.chat.id].players):
+            games[message.chat.id].lay_cards_on_table()
+            bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
         print(games[message.chat.id].bank)
+
+@bot.message_handler(commands=['fold'])
+def fold(message):
+    games[message.chat.id].kick_player(message.from_user.id)
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
@@ -74,6 +83,7 @@ def get_text_messages(message):
         else:
             player = Player(message.from_user.id, all_players[message.from_user.id][0], all_players[message.from_user.id][1])
             games[message.chat.id].join(player)
+
 
 
 
