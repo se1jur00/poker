@@ -12,7 +12,7 @@ class Player:
     def __repr__(self):
         return f'{self.name}:{self.cards}'
 
-    def place_bet(self, bet, ):
+    def place_bet(self, bet ):
         if bet > self.balance:
             return 'Недостаточно средств для ставки'
         self.bet += bet

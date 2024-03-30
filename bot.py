@@ -2,6 +2,7 @@ import telebot
 from Player import Player
 from Game import Game
 from config import BOT_TOKEN
+from telebot import types
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
@@ -28,9 +29,19 @@ def start_game(message):
         games[message.chat.id].start_round()
         for player in games[message.chat.id].players.values():
             bot.send_message(player.id,','.join([str(card) for card in player.cards]))
-        bot.send_message(message.chat.id, f'Малый блайнд - {games[message.chat.id].SB.name}, \nБольшой блайнд - {games[message.chat.id].BB.name}')
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        key_fold = types.KeyboardButton("/fold")
+        key_call = types.KeyboardButton("/call")
+        keyboard.add(key_fold, key_call)
+        bot.send_message(message.chat.id,
+                         text =  f'Малый блайнд - {games[message.chat.id].SB.name}, \nБольшой блайнд - {games[message.chat.id].BB.name}')
+        bot.send_message(message.chat.id, 'Выберите опцию или сделайте ставку',  reply_markup= keyboard)
         if len(games[message.chat.id].players) > 2:
-            bot.send_message(message.chat.id, f'{all_players[games[message.chat.id].next_player][0]}, ожидается ваша ставка')
+            bot.send_message(message.chat.id, f'{all_players[games[message.chat.id].next_player["player_id"]][0]}, ожидается ваша ставка')
+
+
+
+
 
 def create_player(message):
     global all_players
@@ -53,22 +64,78 @@ def create_game(message):
 
 @bot.message_handler(commands=['bet'])
 def bet(message):
-    bet = int(telebot.util.extract_arguments(message.text))
-    print(bet)
-    print(games[message.chat.id].BB.bet)
-    if bet >= games[message.chat.id].BB.bet:
-        player = games[message.chat.id].players[message.from_user.id]
-        games[message.chat.id].place_bet(player, bet)
-        games[message.chat.id].get_next_player_id()
-        bet_players =  [player for player in games[message.chat.id].players.values() if player.bet > 0]
-        if len(bet_players) == len(games[message.chat.id].players):
-            games[message.chat.id].lay_cards_on_table()
-            bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
-        print(games[message.chat.id].bank)
+    if message.from_user.id in games[message.chat.id].players:
+        bet = int(telebot.util.extract_arguments(message.text))
+        print(bet)
+        print(games[message.chat.id].BB.bet)
+        if bet + games[message.chat.id].players[message.from_user.id].bet >= games[message.chat.id].BB.bet:
+            player = games[message.chat.id].players[message.from_user.id]
+            games[message.chat.id].place_bet(player, bet)
+            games[message.chat.id].get_next_player_id()
+            bet_players =  [player for player in games[message.chat.id].players.values() if player.bet > 0]
+            bets = [player.bet for player in bet_players]
+            if len(bet_players) == len(games[message.chat.id].players) :
+                if len(set(bets)) == 1:
+                    games[message.chat.id].lay_cards_on_table()
+                    bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+                else:
+                    max_bet = max(bets)
+                    next_player = [player for player in bet_players if player.bet < max_bet][0]
+                    bot.send_message(message.chat.id, f'{next_player.name}, повысьте или уравняйте ставку')
+            else:
+                bet_0 = []
+                for player in games[message.chat.id].players.values():
+                    if player.bet == 0:
+                        bet_0.append(player.name)
+                players_without_bet = '\n'.join(bet_0)
+                bot.send_message(message.chat.id, f'{players_without_bet}, \nсделайте стаку')
+            print(games[message.chat.id].bank)
+    else:
+        bot.send_message(message.chat.id, 'Вы не можете сделать ставку')
 
 @bot.message_handler(commands=['fold'])
 def fold(message):
+    id = message.from_user.id
+    name = games[message.chat.id].players[id].name
     games[message.chat.id].kick_player(message.from_user.id)
+    bot.send_message(message.chat.id, f'{name} выбыл из игры')
+
+
+@bot.message_handler(commands=['call'])
+def call(message):
+    id = message.from_user.id
+    max_bet = games[message.chat.id].max_bet
+    player_bet = games[message.chat.id].players[id].bet
+    player_balance = games[message.chat.id].players[id].balance
+    dif = max_bet - player_bet
+    if player_balance < dif:
+        games[message.chat.id].bank += player_balance
+        games[message.chat.id].players[id].bet = max_bet
+        games[message.chat.id].players[id].balance = 0
+    else:
+        games[message.chat.id].bank += dif
+        games[message.chat.id].players[id].bet += dif
+        games[message.chat.id].players[id].balance -= dif
+    next_player= games[message.chat.id].get_next_player_id()
+    if next_player:
+        next_player = games[message.chat.id].players[
+            games[message.chat.id].next_player['player_id']]  # TODO переписать
+        bot.send_message(message.chat.id, f'{next_player.name}, сделайте ставку ')
+
+@bot.message_handler(commands=['check'])
+def check(message):
+    id = message.from_user.id
+    status = games[message.chat.id].check(id)
+    if status == 'OK':
+        next_player = games[message.chat.id].players(games[message.chat.id].next_player['player_index'])    #TODO переписать
+        bot.send_message(message.chat.id, f'{next_player.name}, сделайте check или ставку ')
+    elif status == 'OK BB':
+        games[message.chat.id].lay_cards_on_table()
+        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+    else:
+        bot.send_message(message.chat.id, 'вы не можете сделать check')
+
+
 
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message):
