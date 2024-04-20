@@ -25,3 +25,6 @@ class Player:
         self.cards.append(card)
     def fold(self):
         self.cards = []
+
+    def reset_bet(self):
+        self.bet = 0

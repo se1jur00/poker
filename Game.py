@@ -23,6 +23,10 @@ class Game:
     def lay_cards_on_table(self):
         for i in range(3):
             self.table.append(self.deck.get_card())
+        for _id in self.players:
+            self.players[_id].reset_bet()
+        self.max_bet = 0
+
 
     def start_round(self):
         self.give_players_cards()
@@ -34,7 +38,7 @@ class Game:
         self.bank += 50
         self.max_bet = 50
         if len(self.players) > 2:
-            self.next_player = {"player_id": list(self.players.keys())[0], "player_index": 0}
+            self.next_player = {"player_id": list(self.players.keys())[0], "player_index": 0, 'object' : list(self.players.values())[0]}
 
 
     def join(self, player):
@@ -66,20 +70,49 @@ class Game:
 
     def get_next_player_id(self):
         if self.next_player["player_index"] + 1 == len(self.players):
+            self.next_player['player_index'] = 0
+            self.next_player['player_id'] = list(self.players.keys())[0]
+            self.next_player['object'] = self.players[self.next_player['player_id']]
             return
         self.next_player['player_index'] = self.next_player["player_index"] + 1
         self.next_player['player_id'] =list(self.players.keys())[ self.next_player['player_index']]
+        self.next_player['object'] = self.players[self.next_player['player_id']]
         return self.next_player['player_id']
 
     def check(self, id):
         if id == self.next_player['player_id']:
             if len(self.table) == 0 and self.BB.id == id and self.max_bet == self.BB.bet:
-                self.next_player['player_index'] = 0
-                self.next_player['player_id'] = list(self.players.keys())[0]
+                self.get_next_player_id()
                 return 'OK BB'
             elif len(self.table) != 0 and self.next_player['player_index'] == 0:
                 self.get_next_player_id()
                 return 'OK'
-            elif len(self.table) != 0 and self.players[self.next_player['player_index']-1].bet == 0:
+            elif len(self.table) != 0 and list(self.players.keys())[-1] == id:
+                if len(self.table) < 5:
+                    self.get_next_player_id()
+                    self.lay_card()
+                    return 'END'
+                else:
+                    return self.check_winner()
+
+            elif len(self.table) != 0 and list(self.players.values())[self.next_player['player_index']-1].bet == 0:
                 self.get_next_player_id()
                 return 'OK'
+        return  'NO'
+
+
+    def call(self, id):
+        max_bet = self.max_bet
+        player_bet = self.players[id].bet
+        player_balance = self.players[id].balance
+        dif = max_bet - player_bet
+        if player_balance < dif:
+            self.bank += player_balance
+            self.players[id].bet = max_bet
+            self.players[id].balance = 0
+        else:
+            self.bank += dif
+            self.players[id].bet += dif
+            self.players[id].balance -= dif
+        self.get_next_player_id()
+        return self.next_player['object'].name, self.next_player['player_index']

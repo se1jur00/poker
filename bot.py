@@ -68,7 +68,7 @@ def bet(message):
         bet = int(telebot.util.extract_arguments(message.text))
         print(bet)
         print(games[message.chat.id].BB.bet)
-        if bet + games[message.chat.id].players[message.from_user.id].bet >= games[message.chat.id].BB.bet:
+        if bet + games[message.chat.id].players[message.from_user.id].bet >= games[message.chat.id].max_bet:
             player = games[message.chat.id].players[message.from_user.id]
             games[message.chat.id].place_bet(player, bet)
             games[message.chat.id].get_next_player_id()
@@ -77,18 +77,26 @@ def bet(message):
             if len(bet_players) == len(games[message.chat.id].players) :
                 if len(set(bets)) == 1:
                     games[message.chat.id].lay_cards_on_table()
+                    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                    key_fold = types.KeyboardButton("/fold")
+                    key_call = types.KeyboardButton("/call")
+                    key_check = types.KeyboardButton("/check")
+                    keyboard.add(key_fold, key_call, key_check)
                     bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+                    bot.send_message(message.chat.id,
+                                     f'{list(games[message.chat.id].players.values())[0].name}, ожидается ваша ставка',
+                                     reply_markup= keyboard)
                 else:
                     max_bet = max(bets)
                     next_player = [player for player in bet_players if player.bet < max_bet][0]
                     bot.send_message(message.chat.id, f'{next_player.name}, повысьте или уравняйте ставку')
             else:
-                bet_0 = []
-                for player in games[message.chat.id].players.values():
-                    if player.bet == 0:
-                        bet_0.append(player.name)
-                players_without_bet = '\n'.join(bet_0)
-                bot.send_message(message.chat.id, f'{players_without_bet}, \nсделайте стаку')
+                next_player = games[message.chat.id].next_player['object']
+                keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+                key_fold = types.KeyboardButton("/fold")
+                key_call = types.KeyboardButton("/call")
+                keyboard.add(key_fold, key_call, )
+                bot.send_message(message.chat.id, f'{next_player.name}, \nсделайте стаку', reply_markup= keyboard)
             print(games[message.chat.id].bank)
     else:
         bot.send_message(message.chat.id, 'Вы не можете сделать ставку')
@@ -104,34 +112,61 @@ def fold(message):
 @bot.message_handler(commands=['call'])
 def call(message):
     id = message.from_user.id
-    max_bet = games[message.chat.id].max_bet
-    player_bet = games[message.chat.id].players[id].bet
-    player_balance = games[message.chat.id].players[id].balance
-    dif = max_bet - player_bet
-    if player_balance < dif:
-        games[message.chat.id].bank += player_balance
-        games[message.chat.id].players[id].bet = max_bet
-        games[message.chat.id].players[id].balance = 0
+    next_player_name, player_index = games[message.chat.id].call(id)
+    if player_index != 0:
+        bot.send_message(message.chat.id, f'{next_player_name}, сделайте ставку ')
     else:
-        games[message.chat.id].bank += dif
-        games[message.chat.id].players[id].bet += dif
-        games[message.chat.id].players[id].balance -= dif
-    next_player= games[message.chat.id].get_next_player_id()
-    if next_player:
-        next_player = games[message.chat.id].players[
-            games[message.chat.id].next_player['player_id']]  # TODO переписать
-        bot.send_message(message.chat.id, f'{next_player.name}, сделайте ставку ')
+        games[message.chat.id].lay_cards_on_table()
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        key_fold = types.KeyboardButton("/fold")
+        key_call = types.KeyboardButton("/call")
+        key_check = types.KeyboardButton("/check")
+        keyboard.add(key_fold, key_call, key_check)
+        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+        bot.send_message(message.chat.id,
+                         f'{list(games[message.chat.id].players.values())[0].name}, сделайте check или ставку',
+                         reply_markup=keyboard)
+
+
+
 
 @bot.message_handler(commands=['check'])
 def check(message):
     id = message.from_user.id
     status = games[message.chat.id].check(id)
     if status == 'OK':
-        next_player = games[message.chat.id].players(games[message.chat.id].next_player['player_index'])    #TODO переписать
-        bot.send_message(message.chat.id, f'{next_player.name}, сделайте check или ставку ')
+        next_player = games[message.chat.id].next_player['object']
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        key_fold = types.KeyboardButton("/fold")
+        key_call = types.KeyboardButton("/call")
+        key_check = types.KeyboardButton("/check")
+        keyboard.add(key_fold, key_call, key_check)
+        bot.send_message(message.chat.id, f'{next_player.name}, сделайте check или ставку ', reply_markup=keyboard)
     elif status == 'OK BB':
         games[message.chat.id].lay_cards_on_table()
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        key_fold = types.KeyboardButton("/fold")
+        key_call = types.KeyboardButton("/call")
+        key_check = types.KeyboardButton("/check")
+        keyboard.add(key_fold, key_call, key_check)
         bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+        bot.send_message(message.chat.id,
+                         f'{games[message.chat.id].players.values()[0].name}, сделайте check или ставку',
+                         reply_markup=keyboard)
+    elif status == 'END':
+        next_player = games[message.chat.id].next_player['object']
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        key_fold = types.KeyboardButton("/fold")
+        key_call = types.KeyboardButton("/call")
+        key_check = types.KeyboardButton("/check")
+        keyboard.add(key_fold, key_call, key_check)
+        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+        bot.send_message(message.chat.id, f'{next_player.name}, сделайте check или ставку ', reply_markup=keyboard)
+
+    elif len(status) == 2:
+        bot.send_message(message.chat.id, f'выиграл {status[1].name} с комбинацией {status[0]}')
+        games.pop(message.chat.id)
+
     else:
         bot.send_message(message.chat.id, 'вы не можете сделать check')
 
