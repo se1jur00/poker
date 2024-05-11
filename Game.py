@@ -98,7 +98,7 @@ class Game:
             elif len(self.table) != 0 and list(self.players.values())[self.next_player['player_index']-1].bet == 0:
                 self.get_next_player_id()
                 return 'OK'
-        return  'NO'
+        return  'NOT'
 
 
     def call(self, id):
