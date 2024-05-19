@@ -94,16 +94,29 @@ def bet(message):
             bets = [player.bet for player in bet_players]
             if len(bet_players) == len(games[message.chat.id].players) :
                 if len(set(bets)) == 1:
-                    games[message.chat.id].lay_cards_on_table()
-                    keyboard = create_keyboard('not_check')
-                    bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
-                    bot.send_message(message.chat.id,
-                                     f'{list(games[message.chat.id].players.values())[0].name}, ожидается ваша ставка',
-                                     reply_markup= keyboard)
+                    if len(games[message.chat.id].table) == 0:
+                        games[message.chat.id].lay_cards_on_table()
+                        keyboard = create_keyboard('check')
+                        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+                        bot.send_message(message.chat.id,
+                                        f'{list(games[message.chat.id].players.values())[0].name}, ожидается ваша ставка',
+                                        reply_markup= keyboard)
+
+                    elif len(games[message.chat.id].table) == 5:
+                        combination, winner = games[message.chat.id].check_winner()
+                        bot.send_message(message.chat.id, f'выиграл {winner.name} с комбинацией {combination}')
+                        games.pop(message.chat.id)
+                    else:
+                        games[message.chat.id].lay_card()
+                        keyboard = create_keyboard('check')
+                        bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+                        bot.send_message(message.chat.id,
+                                            f'{list(games[message.chat.id].players.values())[0].name}, ожидается ваша ставка',
+                                            reply_markup=keyboard)
                 else:
                     max_bet = max(bets)
-                    next_player = [player for player in bet_players if player.bet < max_bet][0]
-                    bot.send_message(message.chat.id, f'{next_player.name}, повысьте или уравняйте ставку')
+                    next_player = games[message.chat.id].next_player['object'].name
+                    bot.send_message(message.chat.id, f'{next_player}, повысьте или уравняйте ставку')
             else:
                 next_player = games[message.chat.id].next_player['object']
                 keyboard=create_keyboard('not_check')
@@ -133,6 +146,17 @@ def call(message):
         next_player_name, player_index = games[message.chat.id].call(id)
         if player_index != 0:
             bot.send_message(message.chat.id, f'{next_player_name}, сделайте ставку ')
+        elif len(games[message.chat.id].table) == 5:
+            combination, winner = games[message.chat.id].check_winner()
+            bot.send_message(message.chat.id, f'выиграл {winner.name} с комбинацией {combination}')
+            games.pop(message.chat.id)
+        elif len(games[message.chat.id].table) > 0:
+            games[message.chat.id].lay_card()
+            keyboard = create_keyboard('check')
+            bot.send_message(message.chat.id, ','.join(map(str, games[message.chat.id].table)))
+            bot.send_message(message.chat.id,
+                             f'{list(games[message.chat.id].players.values())[0].name}, сделайте check или ставку',
+                             reply_markup=keyboard)
         else:
             games[message.chat.id].lay_cards_on_table()
             keyboard= create_keyboard('check')
@@ -173,7 +197,6 @@ def check(message):
     elif len(status) == 2:
         bot.send_message(message.chat.id, f'выиграл {status[1].name} с комбинацией {status[0]}')
         games.pop(message.chat.id)
-
     else:
         bot.send_message(message.chat.id, 'вы не можете сделать check')
 

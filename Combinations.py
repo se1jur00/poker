@@ -25,7 +25,9 @@ class Combinations:
 
     @staticmethod
     def get_combinations():
-        return [Combinations.royal_flush, Combinations.straight_flush, Combinations.four_of_a_kind, Combinations.full_house, Combinations.flush, Combinations.straight, Combinations.set, Combinations.two_pairs,  Combinations.pairs,]
+        return [Combinations.royal_flush, Combinations.straight_flush, Combinations.four_of_a_kind,
+                Combinations.full_house, Combinations.flush, Combinations.straight, Combinations.set,
+                Combinations.two_pairs,  Combinations.pairs]
 
     @staticmethod
     def flush(players, table):
