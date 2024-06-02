@@ -49,7 +49,7 @@ class Game:
 
     def lay_card(self):
         self.table.append(self.deck.get_card())
-
+        self.max_bet = 0
 
     def kick_player(self, player_id):
         del self.players[player_id]

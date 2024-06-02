@@ -17,14 +17,12 @@ game.join(player5)
 game.start_round()
 
 
-for i in range(2):
-    game.lay_card()
 
 game.table = [Card('Diamonds', '9'), Card('Spades', '10'), Card('Diamonds', 'Queen'), Card('Diamonds', 'King'), Card('Diamonds', '7')]
-player1.cards = [Card('Diamonds', '10'), Card('Diamonds', 'Jack')]
-player2.cards = [Card('Diamonds', '8'), Card('Hearts', 'Jack')]
+player1.cards = [Card('Diamonds', 'Ace'), Card('Diamonds', 'Jack')]
+player2.cards = [Card('Diamonds', '5'), Card('Hearts', '6')]
 print(game.table)
 print(game.check_winner())
-for player in game.players:
-    print(player.cards)
-print(Combinations.sort_cards(player1.cards+game.table))
+# for player in game.players:
+#     print(player.cards)
+# print(Combinations.sort_cards(player1.cards+game.table))

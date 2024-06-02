@@ -27,7 +27,7 @@ class Combinations:
     def get_combinations():
         return [Combinations.royal_flush, Combinations.straight_flush, Combinations.four_of_a_kind,
                 Combinations.full_house, Combinations.flush, Combinations.straight, Combinations.set,
-                Combinations.two_pairs,  Combinations.pairs]
+                Combinations.two_pairs,  Combinations.pairs, Combinations.kicker]
 
     @staticmethod
     def flush(players, table):
@@ -228,6 +228,14 @@ class Combinations:
             return
         else:
             winner = max(straight_winners, key=lambda x: x[1])
+        return winner
+
+    @staticmethod
+    def kicker(players, table):
+        player_kickers  = []
+        for player in players:
+            player_kickers.append([player, max(player.cards)])
+        winner = max(player_kickers, key=lambda x: x[1])
         return winner
 
 
